@@ -579,6 +579,17 @@ RCT_EXPORT_METHOD(coordinateForPoint:(nonnull NSNumber *)reactTag
     AIRMap *map = (AIRMap *)recognizer.view;
     if (!map.onPanDrag) return;
 
+    NSString *state = @"";
+    switch ([recognizer state]) {
+        case UIGestureRecognizerStateBegan:
+            state = @"began";
+            break;
+        case UIGestureRecognizerStateEnded:
+            state = @"ended";
+        default:
+            break;
+    }
+
     CGPoint touchPoint = [recognizer locationInView:map];
     CLLocationCoordinate2D coord = [map convertPoint:touchPoint toCoordinateFromView:map];
     map.onPanDrag(@{
@@ -590,6 +601,7 @@ RCT_EXPORT_METHOD(coordinateForPoint:(nonnull NSNumber *)reactTag
                           @"x": @(touchPoint.x),
                           @"y": @(touchPoint.y),
                           },
+                  @"state": state,
                   });
 
 }
