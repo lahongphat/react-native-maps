@@ -152,9 +152,6 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
           @Override
           public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX,
               float distanceY) {
-            if (handlePanDrag) {
-              onPanDrag(e2);
-            }
             return false;
           }
         });
@@ -760,6 +757,9 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
     return markerView.getInfoContents();
   }
 
+  float pointDown = 0;
+  float pointUp = 0;
+
   @Override
   public boolean dispatchTouchEvent(MotionEvent ev) {
     gestureDetector.onTouchEvent(ev);
@@ -770,10 +770,24 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
       case (MotionEvent.ACTION_DOWN):
         this.getParent().requestDisallowInterceptTouchEvent(
             map != null && map.getUiSettings().isScrollGesturesEnabled());
+            pointDown = ev.getX();
+        if (handlePanDrag) {
+            onPanDrag(ev);
+        }
         break;
       case (MotionEvent.ACTION_UP):
         // Clear this regardless, since isScrollGesturesEnabled() may have been updated
         this.getParent().requestDisallowInterceptTouchEvent(false);
+        pointUp = ev.getX();
+        if (handlePanDrag && !(pointDown == pointUp)) {
+            onPanDrag(ev);
+        }
+        break;
+      case (MotionEvent.ACTION_MOVE):
+        //pointDown = ev.getX();
+        if (handlePanDrag) {
+            onPanDrag(ev);
+        }
         break;
     }
     super.dispatchTouchEvent(ev);
@@ -910,6 +924,14 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
     Point point = new Point((int) ev.getX(), (int) ev.getY());
     LatLng coords = this.map.getProjection().fromScreenLocation(point);
     WritableMap event = makeClickEventData(coords);
+    switch (ev.getAction()) {
+      case MotionEvent.ACTION_DOWN:
+        event.putString("state", "began");
+        break;
+      case MotionEvent.ACTION_UP:
+        event.putString("state", "ended");
+        break;
+    }
     manager.pushEvent(context, this, "onPanDrag", event);
   }
 
